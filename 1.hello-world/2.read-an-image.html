@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta name="description" content="Read barcodes from images in no time with Dynamsoft Barcode Reader. With this online demo, you can choose a file to scan the barcodes on them.">
+    <meta name="keywords" content="read barcode from still images">
+    <title>Dynamsoft Barcode Reader Sample - Read an Image</title>
+    <!--
+      This sample makes use of the library hosted by the CDN jsDelivr. If you would rather use the
+      library offline. Please see the guide on how to host the library: 
+      https://www.dynamsoft.com/barcode-reader/programming/javascript/user-guide/?ver=latest#host-the-library-yourself-recommended
+    -->
+    <script src="https://cdn.jsdelivr.net/npm/dynamsoft-javascript-barcode@8.8.3/dist/dbr.js"></script>
+</head>
+
+<body>
+    <h1 style="font-size: 1.5em;">Read Barcode from Images</h1>
+    <input id="ipt-file" type="file" style="margin-bottom: 2vh;" accept="image/png,image/jpeg,image/bmp,image/gif">
+    <input type="text" id="result" title="Double click to clear!" readonly="true" class="latest-result" placeholder="The Last Read Barcode">
+    <div id="UIElement">
+        <img id="imgToRead" alt="Image to read" hidden /><br />
+        <span id='lib-load' style='font-size:x-large' hidden>Loading Library...</span>
+        <span id='reading' style='font-size:x-large;max-height: 10%;' hidden>Reading Barcodes...</span>
+    </div>
+    <div>
+        <span style="float:left">All Results:</span><br />
+        <div id="results"></div>
+    </div>
+    <script>
+        /** LICENSE ALERT - README
+         * The library requires a license to work, you use the API organizationID to tell the program where to fetch your license.
+         * If the Organizaion ID is not specified, a 7-day (public) trial license will be used by default which is the case in this sample.
+         * Note that network connection is required for this license to work.
+         */
+
+        /* When using your own license, uncomment the following line and specify your Organization ID. */
+
+        // Dynamsoft.DBR.organizationID = "YOUR-ORGANIZATION-ID";
+
+        /* If you don't have a license yet, you can request a trial on this page: https://www.dynamsoft.com/customer/license/trialLicense?product=dbr&package=js&utm_source=samples */
+        /* For more information, please refer to https://www.dynamsoft.com/license-server/docs/about/licensefaq.html?ver=latest#how-to-use-a-trackable-license. */
+
+        /* The API "productKeys" is an alternative way to license the library, the major difference is that it does not require a network. Contact support@dynamsoft.com for more information. */
+
+        // Dynamsoft.DBR.productKeys = "YOUR-PRODUCT-KEY";
+
+        /** LICENSE ALERT - THE END */
+
+        // reader for decoding pictures
+        let pReader = null;
+        window.onload = async function() {
+            // Load the library on page load to speed things up.
+            try {
+                await Dynamsoft.DBR.BarcodeReader.loadWasm();
+            } catch (ex) {
+                alert(ex.message);
+                throw ex;
+            }
+        };
+        var driverLicenseFields = [
+            { 'abbreviation': 'DAA', 'description': 'Full Name' }
+            , { 'abbreviation': 'DAB', 'description': 'Last Name' }
+            , { 'abbreviation': 'DAB', 'description': 'Family Name' }
+            , { 'abbreviation': 'DAC', 'description': 'First Name' }
+            , { 'abbreviation': 'DAC', 'description': 'Given Name' }
+            , { 'abbreviation': 'DAD', 'description': 'Middle Name or Initial' }
+            , { 'abbreviation': 'DAD', 'description': 'Middle Name' }
+            , { 'abbreviation': 'DAE', 'description': 'Name Suffix' }
+            , { 'abbreviation': 'DAF', 'description': 'Name Prefix' }
+            , { 'abbreviation': 'DAG', 'description': 'Mailing Street Address1' }
+            , { 'abbreviation': 'DAH', 'description': 'Mailing Street Address2' }
+            , { 'abbreviation': 'DAI', 'description': 'Mailing City' }
+            , { 'abbreviation': 'DAJ', 'description': 'Mailing Jurisdiction Code' }
+            , { 'abbreviation': 'DAK', 'description': 'Mailing Postal Code' }
+            , { 'abbreviation': 'DAL', 'description': 'Residence Street Address1' }
+            , { 'abbreviation': 'DAM', 'description': 'Residence Street Address2' }
+            , { 'abbreviation': 'DAN', 'description': 'Residence City' }
+            , { 'abbreviation': 'DAO', 'description': 'Residence Jurisdiction Code' }
+            , { 'abbreviation': 'DAP', 'description': 'Residence Postal Code' }
+            , { 'abbreviation': 'DAQ', 'description': 'License or ID Number' }
+            , { 'abbreviation': 'DAR', 'description': 'License Classification Code' }
+            , { 'abbreviation': 'DAS', 'description': 'License Restriction Code' }
+            , { 'abbreviation': 'DAT', 'description': 'License Endorsements Code' }
+            , { 'abbreviation': 'DAU', 'description': 'Height in FT_IN' }
+            , { 'abbreviation': 'DAV', 'description': 'Height in CM' }
+            , { 'abbreviation': 'DAW', 'description': 'Weight in LBS' }
+            , { 'abbreviation': 'DAX', 'description': 'Weight in KG' }
+            , { 'abbreviation': 'DAY', 'description': 'Eye Color' }
+            , { 'abbreviation': 'DAZ', 'description': 'Hair Color' }
+            , { 'abbreviation': 'DBA', 'description': 'License Expiration Date' }
+            , { 'abbreviation': 'DBB', 'description': 'Date of Birth' }
+            , { 'abbreviation': 'DBC', 'description': 'Sex' }
+            , { 'abbreviation': 'DBD', 'description': 'License or ID Document Issue Date' }
+            , { 'abbreviation': 'DBE', 'description': 'Issue Timestamp' }
+            , { 'abbreviation': 'DBF', 'description': 'Number of Duplicates' }
+            , { 'abbreviation': 'DBG', 'description': 'Medical Indicator Codes' }
+            , { 'abbreviation': 'DBH', 'description': 'Organ Donor' }
+            , { 'abbreviation': 'DBI', 'description': 'Non-Resident Indicator' }
+            , { 'abbreviation': 'DBJ', 'description': 'Unique Customer Identifier' }
+            , { 'abbreviation': 'DBK', 'description': 'Social Security Number' }
+            , { 'abbreviation': 'DBL', 'description': 'Date Of Birth' }
+            , { 'abbreviation': 'DBM', 'description': 'Social Security Number' }
+            , { 'abbreviation': 'DBN', 'description': 'Full Name' }
+            , { 'abbreviation': 'DBO', 'description': 'Last Name' }
+            , { 'abbreviation': 'DBO', 'description': 'Family Name' }
+            , { 'abbreviation': 'DBP', 'description': 'First Name' }
+            , { 'abbreviation': 'DBP', 'description': 'Given Name' }
+            , { 'abbreviation': 'DBQ', 'description': 'Middle Name' }
+            , { 'abbreviation': 'DBQ', 'description': 'Middle Name or Initial' }
+            , { 'abbreviation': 'DBR', 'description': 'Suffix' }
+            , { 'abbreviation': 'DBS', 'description': 'Prefix' }
+            , { 'abbreviation': 'DCA', 'description': 'Virginia Specific Class' }
+            , { 'abbreviation': 'DCB', 'description': 'Virginia Specific Restrictions' }
+            , { 'abbreviation': 'DCD', 'description': 'Virginia Specific Endorsements' }
+            , { 'abbreviation': 'DCE', 'description': 'Physical Description Weight Range' }
+            , { 'abbreviation': 'DCF', 'description': 'Document Discriminator' }
+            , { 'abbreviation': 'DCG', 'description': 'Country territory of issuance' }
+            , { 'abbreviation': 'DCH', 'description': 'Federal Commercial Vehicle Codes' }
+            , { 'abbreviation': 'DCI', 'description': 'Place of birth' }
+            , { 'abbreviation': 'DCJ', 'description': 'Audit information' }
+            , { 'abbreviation': 'DCK', 'description': 'Inventory Control Number' }
+            , { 'abbreviation': 'DCL', 'description': 'Race Ethnicity' }
+            , { 'abbreviation': 'DCM', 'description': 'Standard vehicle classification' }
+            , { 'abbreviation': 'DCN', 'description': 'Standard endorsement code' }
+            , { 'abbreviation': 'DCO', 'description': 'Standard restriction code' }
+            , { 'abbreviation': 'DCP', 'description': 'Jurisdiction specific vehicle classification description' }
+            , { 'abbreviation': 'DCQ', 'description': 'Jurisdiction-specific' }
+            , { 'abbreviation': 'DCR', 'description': 'Jurisdiction specific restriction code description' }
+            , { 'abbreviation': 'DCS', 'description': 'Family Name' }
+            , { 'abbreviation': 'DCS', 'description': 'Last Name' }
+            , { 'abbreviation': 'DCT', 'description': 'Given Name' }
+            , { 'abbreviation': 'DCT', 'description': 'First Name' }
+            , { 'abbreviation': 'DCU', 'description': 'Suffix' }
+            , { 'abbreviation': 'DDA', 'description': 'Compliance Type' }
+            , { 'abbreviation': 'DDB', 'description': 'Card Revision Date' }
+            , { 'abbreviation': 'DDC', 'description': 'HazMat Endorsement Expiry Date' }
+            , { 'abbreviation': 'DDD', 'description': 'Limited Duration Document Indicator' }
+            , { 'abbreviation': 'DDE', 'description': 'Family Name Truncation' }
+            , { 'abbreviation': 'DDF', 'description': 'First Names Truncation' }
+            , { 'abbreviation': 'DDG', 'description': 'Middle Names Truncation' }
+            , { 'abbreviation': 'DDH', 'description': 'Under 18 Until' }
+            , { 'abbreviation': 'DDI', 'description': 'Under 19 Until' }
+            , { 'abbreviation': 'DDJ', 'description': 'Under 21 Until' }
+            , { 'abbreviation': 'DDK', 'description': 'Organ Donor Indicator' }
+            , { 'abbreviation': 'DDL', 'description': 'Veteran Indicator' }
+            , { 'abbreviation': 'PAA', 'description': 'Permit Classification Code' }
+            , { 'abbreviation': 'PAB', 'description': 'Permit Expiration Date' }
+            , { 'abbreviation': 'PAC', 'description': 'Permit Identifier' }
+            , { 'abbreviation': 'PAD', 'description': 'Permit IssueDate' }
+            , { 'abbreviation': 'PAE', 'description': 'Permit Restriction Code' }
+            , { 'abbreviation': 'PAF', 'description': 'Permit Endorsement Code' }
+            , { 'abbreviation': 'ZVA', 'description': 'Court Restriction Code' }
+        ]
+        document.getElementById('ipt-file').addEventListener('change', async function() {
+            try {
+                document.getElementById("imgToRead").hidden = true;
+                document.getElementById('lib-load').hidden = false;
+                pReader = pReader || Dynamsoft.DBR.BarcodeReader.createInstance();
+                let reader = await pReader;
+                document.getElementById('lib-load').hidden = true;
+                document.getElementById('reading').hidden = false;
+                for (let i = 0; i < this.files.length; ++i) {
+                    // In our case, there will only be one file here (no 'multiple' attribute)
+                    let file = this.files[i];
+                    let time = ((new Date()).getTime()).toString();
+                    if (FileReader) {
+                        var fr = new FileReader();
+                        fr.onload = function() {
+                            document.getElementById("imgToRead").src = fr.result;
+                            document.getElementById("imgToRead").hidden = false;
+                        }
+                        fr.readAsDataURL(file);
+                    }
+                    // Decode the file and show results
+                    let results = await reader.decode(file);
+                    let newElements = [];
+                    newElements.push(createASpan(file.name + ": ", "bigger"));
+                    newElements.push(document.createElement('br'));
+                    newElements.push(document.createElement('br'));
+                    if (results.length === 0) {
+                        newElements.push(createASpan("No Barcode Found!"));
+                        newElements.push(document.createElement('br'));
+                    }
+                    console.log(results);
+                    let str=results[0].barcodeText.split('\n');
+                    console.log(str);
+                    var templateValue=[];
+                    for(let i=0;i<str.length;i++){
+                        for(let j=0;j<driverLicenseFields.length;j++){
+                            if(str[i].length>3){
+                                let tempstr=str[i].substring(0,3);
+                                if(tempstr==driverLicenseFields[j]['abbreviation']){
+                                    templateValue.push({
+                                        'abbreviation':driverLicenseFields[j]['abbreviation'],
+                                        'description': driverLicenseFields[j]['description'],
+                                        'value': str[i].substring(3)
+                                    })
+                                }
+                            }
+                            
+                        }
+                    }
+                    console.log(templateValue);
+                    for (let result of results) {
+                        document.getElementById('result').value = result.barcodeFormatString + ": " + result.barcodeText;
+                        newElements.push(createASpan(result.barcodeFormatString + ": "));
+                        newElements.push(createASpan(result.barcodeText, "resultText"));
+                        newElements.push(document.createElement('br'));
+                        if (result.barcodeText.indexOf("Attention(exceptionCode") != -1) {
+                            newElements.push(createASpan(" Error: " + result.exception.message));
+                            newElements.push(document.createElement('br'));
+                        }
+                    }
+                    newElements.push(document.createElement('hr'));
+                    for (let span of newElements) {
+                        document.getElementById('results').appendChild(span);
+                    }
+                    // console.log(newElements);
+                    document.getElementById('results').scrollTop = document.getElementById('results').scrollHeight;
+                }
+                document.getElementById('reading').hidden = true;
+            } catch (ex) {
+                alert(ex.message);
+                throw ex;
+            }
+            this.value = '';
+        });
+        document.getElementById('result').addEventListener('dblclick', async() => {
+            document.getElementById('result').value = "";
+        });
+
+        function createASpan(txt, className) {
+            let newSPAN = document.createElement("span");
+            newSPAN.textContent = txt;
+            if (className)
+                newSPAN.className = className;
+            return newSPAN;
+        }
+    </script>
+</body>
+<style>
+    body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        width: 100vw;
+        height: 90vh;
+        color: #455A64;
+        margin: 0;
+    }
+    
+    button {
+        font-size: 1.5rem;
+        margin-bottom: 2vh;
+    }
+    
+    span {
+        font-size: 0.8rem;
+    }
+    
+    .latest-result {
+        display: block;
+        margin: 0;
+        padding: 0.4rem 0.8rem;
+        color: inherit;
+        width: 80vw;
+        border: none;
+        font-size: 1rem;
+        border-radius: 0.2rem;
+        text-align: center;
+    }
+    
+    .latest-result::placeholder {
+        color: #B0BEC5;
+    }
+    
+    .latest-result:focus {
+        outline: none;
+        box-shadow: 0.1rem 0.4rem 0.8rem #5e35b1;
+    }
+    
+    #results {
+        border: 1px dashed grey;
+        overflow: auto;
+        width: 80vw;
+        padding: 2vmin;
+        margin-bottom: 3vh;
+        height: 15vh;
+    }
+    
+    .resultText {
+        color: #cE5E04
+    }
+    
+    .bigger {
+        font-size: large;
+        margin-bottom: 2%;
+    }
+    
+    #UIElement {
+        margin: 2vmin auto;
+        text-align: center;
+        font-size: medium;
+        height: 40vh;
+        width: 80vw;
+    }
+    
+    #UIElement img {
+        max-width: 100%;
+        max-height: 90%;
+        border: solid 1px gray;
+    }
+</style>
+
+</html>
